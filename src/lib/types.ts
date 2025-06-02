@@ -13,9 +13,9 @@ export interface EnergyPriceData {
 }
 
 export interface ApiResponse<T> {
-  data?: {
+  data: {
     data: T[];
-  };
+  } | null;
   success?: boolean;
   message?: string;
   error?: string;

@@ -13,75 +13,92 @@ export default function Home() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [electricityPrices, setElectricityPrices] = useState<any>(null);
   const [gasPrices, setGasPrices] = useState<any>(null);
+  const [currentPrices, setCurrentPrices] = useState<{
+    electricity: any;
+    gas: any;
+  }>({ electricity: null, gas: null });
 
   const now = new Date();
   const currentHour = now.getHours();
 
-  const currentElectricityPrice = electricityPrices?.data?.data?.find((price: any) => {
-    const priceDate = new Date(price.start_date_datetime);
-    return priceDate.getHours() === currentHour;
-  });
-
-  const currentGasPrice = gasPrices?.data?.data?.find((price: any) => {
-    const priceDate = new Date(price.start_date_datetime);
-    return priceDate.toDateString() === now.toDateString();
-  });
-
+  // Fetch current prices once when page loads
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchCurrentPrices = async () => {
       try {
-        const formattedDate = format(selectedDate, 'yyyy-MM-dd');
-        console.log('Fetching data for date:', formattedDate);
-        
-        try {
-          const [electricityData, gasData] = await Promise.all([
-            fetchElectricityPrices(formattedDate),
-            fetchGasPrices(formattedDate)
-          ]);
-          
-          console.log('Raw API Response:', { electricityData, gasData });
-          console.log('Electricity data structure:', JSON.stringify(electricityData, null, 2));
-          console.log('Gas data structure:', JSON.stringify(gasData, null, 2));
+        const todayFormatted = format(now, 'yyyy-MM-dd');
+        const [electricityData, gasData] = await Promise.all([
+          fetchElectricityPrices(todayFormatted),
+          fetchGasPrices(todayFormatted)
+        ]);
 
-          if (electricityData?.data?.data) {
-            const filteredElectricityData = {
-              data: {
-                data: electricityData.data.data.filter((price: any) => {
-                  const priceDate = new Date(price.start_date_datetime);
-                  return priceDate.toDateString() === selectedDate.toDateString();
-                })
-              }
-            };
-            setElectricityPrices(filteredElectricityData);
-          } else {
-            setElectricityPrices({ data: null });
-          }
+        const currentElectricityPrice = electricityData?.data?.data?.find((price: any) => {
+          const priceDate = new Date(price.start_date_datetime);
+          return priceDate.getHours() === currentHour;
+        });
 
-          if (gasData?.data?.data) {
-            const filteredGasData = {
-              data: {
-                data: gasData.data.data.filter((price: any) => {
-                  const priceDate = new Date(price.start_date_datetime);
-                  return priceDate.toDateString() === selectedDate.toDateString();
-                })
-              }
-            };
-            setGasPrices(filteredGasData);
-          } else {
-            setGasPrices({ data: null });
-          }
+        const currentGasPrice = gasData?.data?.data?.find((price: any) => {
+          const priceDate = new Date(price.start_date_datetime);
+          return priceDate.toDateString() === now.toDateString();
+        });
 
-        } catch (error) {
-          console.error('API error:', error);
-          setElectricityPrices({ data: null });
-          setGasPrices({ data: null });
-        }
+        setCurrentPrices({
+          electricity: currentElectricityPrice,
+          gas: currentGasPrice
+        });
       } catch (error) {
-        console.error('Error fetching data:', error);
+        console.error('Error fetching current prices:', error);
       }
     };
 
-    fetchData();
+    fetchCurrentPrices();
+  }, []); // Empty dependency array - only run once
+
+  // Fetch historical prices when selected date changes
+  useEffect(() => {
+    const fetchHistoricalData = async () => {
+      try {
+        const formattedDate = format(selectedDate, 'yyyy-MM-dd');
+        
+        const [electricityData, gasData] = await Promise.all([
+          fetchElectricityPrices(formattedDate).catch(() => ({ data: null })),
+          fetchGasPrices(formattedDate).catch(() => ({ data: null }))
+        ]);
+
+        if (electricityData?.data?.data) {
+          const filteredElectricityData = {
+            data: {
+              data: electricityData.data.data.filter((price: any) => {
+                const priceDate = new Date(price.start_date_datetime);
+                return priceDate.toDateString() === selectedDate.toDateString();
+              })
+            }
+          };
+          setElectricityPrices(filteredElectricityData);
+        } else {
+          setElectricityPrices({ data: null });
+        }
+
+        if (gasData?.data?.data) {
+          const filteredGasData = {
+            data: {
+              data: gasData.data.data.filter((price: any) => {
+                const priceDate = new Date(price.start_date_datetime);
+                return priceDate.toDateString() === selectedDate.toDateString();
+              })
+            }
+          };
+          setGasPrices(filteredGasData);
+        } else {
+          setGasPrices({ data: null });
+        }
+      } catch (error) {
+        // Silently handle any other errors and just show no data
+        setElectricityPrices({ data: null });
+        setGasPrices({ data: null });
+      }
+    };
+
+    fetchHistoricalData();
   }, [selectedDate]);
 
   const handlePreviousDay = () => setSelectedDate(prev => subDays(prev, 1));
@@ -91,20 +108,18 @@ export default function Home() {
 
   return (
     <main className="min-h-screen p-8">
-      <div className="container-xxl mx-auto">
+      <div className="mx-auto max-w-[1400px] w-full">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-          {currentElectricityPrice && (
+          {currentPrices.electricity && (
             <PriceCard
               title="Huidige Elektriciteitsprijs"
-              price={currentElectricityPrice.total_price_tax_included}
-              timestamp={currentElectricityPrice.start_date_datetime}
+              price={currentPrices.electricity.total_price_tax_included}
             />
           )}
-          {currentGasPrice && (
+          {currentPrices.gas && (
             <PriceCard
               title="Huidige Gasprijs"
-              price={currentGasPrice.total_price_tax_included}
-              timestamp={currentGasPrice.start_date_datetime}
+              price={currentPrices.gas.total_price_tax_included}
             />
           )}
         </div>
