@@ -1,0 +1,76 @@
+import { Card, LineChart, Title } from '@tremor/react';
+import { EnergyPriceData, ApiResponse } from '@/lib/types';
+import { format } from 'date-fns';
+import { nl } from "date-fns/locale";
+
+interface PriceChartProps {
+  data: ApiResponse<EnergyPriceData>;
+  date: Date;
+  title: string;
+}
+
+type ChartDataPoint = {
+  time: string;
+  value: number;
+};
+
+export function PriceChart({ data, date, title }: PriceChartProps) {
+  console.log('PriceChart received data:', JSON.stringify(data, null, 2));
+  const dateStr = format(date, 'd MMMM yyyy', { locale: nl });
+  if (!data?.data?.data) {
+    return (
+      <Card>
+        <Title>{title} - {dateStr}</Title>
+      </Card>
+    );
+  }
+
+  const chartData: ChartDataPoint[] = data.data.data.map((price: EnergyPriceData) => {
+    console.log('Processing price data:', price);
+    const datetime = new Date(price.start_date_datetime);
+    return {
+      time: format(datetime, 'HH:mm'),
+      value: price.total_price_tax_included / 1000000
+    };
+  }).sort((a: ChartDataPoint, b: ChartDataPoint) => {
+    // Sort by time to ensure correct line chart
+    const [aHour, aMinute] = a.time.split(':').map(Number);
+    const [bHour, bMinute] = b.time.split(':').map(Number);
+    return (aHour * 60 + aMinute) - (bHour * 60 + bMinute);
+  });
+
+  const customTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-white p-4 rounded shadow">
+          <p>Tijd: {payload[0].payload.time}</p>
+          <p>Prijs: €{(payload[0].payload.value).toFixed(2)}/kWh</p>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  console.log('Final chart data:', chartData);
+
+  return (
+    <Card>
+      <Title>{title} - {dateStr}</Title>
+      <LineChart
+        className="mt-6 h-72"
+        data={chartData}
+        index="time"
+        categories={['value']}
+        colors={['indigo']}
+        valueFormatter={(value) => `€${value.toFixed(2)}`}
+        yAxisWidth={60}
+        showAnimation={false}
+        showLegend={false}
+        style={{
+          stroke: '#4F46E5',
+          strokeWidth: 2
+        }}
+      />
+    </Card>
+  );
+}
