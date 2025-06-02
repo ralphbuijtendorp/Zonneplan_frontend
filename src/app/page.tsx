@@ -12,7 +12,6 @@ import { Button, Card, Title, LineChart } from '@tremor/react';
 export default function Home() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [electricityPrices, setElectricityPrices] = useState<any>(null);
-  const [gasPrices, setGasPrices] = useState<any>(null);
   const [currentPrices, setCurrentPrices] = useState<{
     electricity: any;
     gas: any;
@@ -59,10 +58,7 @@ export default function Home() {
       try {
         const formattedDate = format(selectedDate, 'yyyy-MM-dd');
         
-        const [electricityData, gasData] = await Promise.all([
-          fetchElectricityPrices(formattedDate).catch(() => ({ data: null })),
-          fetchGasPrices(formattedDate).catch(() => ({ data: null }))
-        ]);
+        const electricityData = await fetchElectricityPrices(formattedDate).catch(() => ({ data: null }));
 
         if (electricityData?.data?.data) {
           const filteredElectricityData = {
@@ -77,24 +73,9 @@ export default function Home() {
         } else {
           setElectricityPrices({ data: null });
         }
-
-        if (gasData?.data?.data) {
-          const filteredGasData = {
-            data: {
-              data: gasData.data.data.filter((price: any) => {
-                const priceDate = new Date(price.start_date_datetime);
-                return priceDate.toDateString() === selectedDate.toDateString();
-              })
-            }
-          };
-          setGasPrices(filteredGasData);
-        } else {
-          setGasPrices({ data: null });
-        }
       } catch (error) {
         // Silently handle any other errors and just show no data
         setElectricityPrices({ data: null });
-        setGasPrices({ data: null });
       }
     };
 
@@ -120,6 +101,7 @@ export default function Home() {
             <PriceCard
               title="Huidige Gasprijs"
               price={currentPrices.gas.total_price_tax_included}
+              unit="M³"
             />
           )}
         </div>
@@ -132,12 +114,12 @@ export default function Home() {
                 className="mt-6 h-72"
                 data={electricityPrices.data.data.map((price: any) => ({
                   time: format(new Date(price.start_date_datetime), 'HH:mm'),
-                  value: price.total_price_tax_included / 1000000
+                  value: (price.total_price_tax_included / 10000000).toFixed(2)
                 }))}
                 index="time"
                 categories={['value']}
                 colors={['indigo']}
-                valueFormatter={(value) => `€${value.toFixed(2)}`}
+                valueFormatter={(value) => `€${value}`}
                 yAxisWidth={60}
                 showAnimation={false}
                 showLegend={false}

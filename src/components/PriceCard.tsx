@@ -1,14 +1,15 @@
-import { Card, Text, Title } from '@tremor/react';
+import { Card, Title, Text } from '@tremor/react';
 import { format } from 'date-fns';
 import { nl } from 'date-fns/locale';
 
 interface PriceCardProps {
   title: string;
   price: number;
+  unit?: 'kWh' | 'M³';
 }
 
-export function PriceCard({ title, price }: PriceCardProps) {
-  const formattedPrice = price ? `€${(price / 100000).toFixed(2)}/kWh` : 'Geen prijs beschikbaar';
+export function PriceCard({ title, price, unit = 'kWh' }: PriceCardProps) {
+  const formattedPrice = price ? `€${(price / 10000000).toFixed(2)}/${unit}` : 'Geen prijs beschikbaar';
 
   return (
     <Card className="h-full">
