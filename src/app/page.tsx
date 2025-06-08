@@ -170,9 +170,10 @@ export default function Home() {
                 index="time"
                 categories={['value']}
                 colors={['#00aa65']}
-                valueFormatter={(value) => `€${value}`}
+                valueFormatter={(value) => `€${Number(value).toFixed(2)}`}
                 yAxisWidth={60}
-                showAnimation={false}
+                showAnimation={true}
+                animationDuration={400}
                 showLegend={false}
                 style={{
                   stroke: '#00aa65',
