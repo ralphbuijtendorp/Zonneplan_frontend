@@ -8,14 +8,27 @@ import { EnergyPriceData, ApiResponse } from '@/lib/types';
 import { format, addDays, subDays } from 'date-fns';
 import { nl } from 'date-fns/locale';
 import { Button, Card, Title, LineChart } from '@tremor/react';
+import { DailyRecordsCard } from '@/components/DailyRecordsCard';
 
 export default function Home() {
+  const headerStyle = {
+    background: 'white',
+    borderBottom: '1px solid #E0E0E0',
+    padding: '2rem 0',
+    marginBottom: '2rem'
+  };
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [electricityPrices, setElectricityPrices] = useState<any>(null);
   const [currentPrices, setCurrentPrices] = useState<{
     electricity: any;
     gas: any;
   }>({ electricity: null, gas: null });
+
+  const [dailyRecords, setDailyRecords] = useState<{
+    highest: { price: number; time: string } | null;
+    lowest: { price: number; time: string } | null;
+    mostSustainable: { score: number; time: string } | null;
+  }>({ highest: null, lowest: null, mostSustainable: null });
 
   const now = new Date();
   const currentHour = now.getHours();
@@ -70,8 +83,39 @@ export default function Home() {
             }
           };
           setElectricityPrices(filteredElectricityData);
+
+          // Process daily records from electricity data
+          const prices = filteredElectricityData.data.data;
+          let highest = { price: -Infinity, time: '' };
+          let lowest = { price: Infinity, time: '' };
+          let mostSustainable = { score: -Infinity, time: '' };
+
+          prices.forEach((price: any) => {
+            const priceValue = price.total_price_tax_included;
+            const sustainabilityScore = price.sustainability_score || 0;
+            const priceDate = new Date(price.start_date_datetime);
+            const timeStr = `${priceDate.getHours()}:00 - ${priceDate.getHours() + 1}:00`;
+
+            if (priceValue > highest.price) {
+              highest = { price: priceValue, time: timeStr };
+            }
+            if (priceValue < lowest.price) {
+              lowest = { price: priceValue, time: timeStr };
+            }
+            // Use sustainability score to determine the most sustainable hour
+            if (sustainabilityScore > mostSustainable.score) {
+              mostSustainable = { score: sustainabilityScore, time: timeStr };
+            }
+          });
+
+          setDailyRecords({
+            highest,
+            lowest,
+            mostSustainable
+          });
         } else {
           setElectricityPrices({ data: null });
+          setDailyRecords({ highest: null, lowest: null, mostSustainable: null });
         }
       } catch (error) {
         // Silently handle any other errors and just show no data
@@ -88,9 +132,15 @@ export default function Home() {
   // Current prices are already defined above
 
   return (
-    <main className="min-h-screen p-8">
+    <main className="min-h-screen bg-gray-50">
+      <header style={headerStyle}>
+        <div className="mx-auto max-w-[1400px] w-full px-8 flex justify-center">
+          <img src="/zonneplan-logo.png" alt="Zonneplan" className="h-12" />
+        </div>
+      </header>
+      <div className="px-8 pb-8">
       <div className="mx-auto max-w-[1400px] w-full">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-12">
           {currentPrices.electricity && (
             <PriceCard
               title="Huidige Elektriciteitsprijs"
@@ -104,6 +154,7 @@ export default function Home() {
               unit="M³"
             />
           )}
+          <DailyRecordsCard records={dailyRecords} />
         </div>
 
         <div className="grid grid-cols-1 gap-4">
@@ -118,13 +169,13 @@ export default function Home() {
                 }))}
                 index="time"
                 categories={['value']}
-                colors={['indigo']}
+                colors={['#00aa65']}
                 valueFormatter={(value) => `€${value}`}
                 yAxisWidth={60}
                 showAnimation={false}
                 showLegend={false}
                 style={{
-                  stroke: '#4F46E5',
+                  stroke: '#00aa65',
                   strokeWidth: 2
                 }}
               />
@@ -136,10 +187,21 @@ export default function Home() {
           </Card>
         </div>
 
-        <div className="flex justify-center gap-4 mt-4">
-          <Button onClick={handlePreviousDay}>Vorige Dag</Button>
-          <Button onClick={handleNextDay}>Volgende Dag</Button>
+        <div className="flex justify-center gap-4 mt-12">
+          <Button
+            onClick={handlePreviousDay}
+            className="bg-[#00aa65] hover:bg-[#009959] text-white border-none"
+          >
+            Vorige Dag
+          </Button>
+          <Button
+            onClick={handleNextDay}
+            className="bg-[#00aa65] hover:bg-[#009959] text-white border-none"
+          >
+            Volgende Dag
+          </Button>
         </div>
+      </div>
       </div>
     </main>
   );

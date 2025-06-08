@@ -19,8 +19,13 @@ export function PriceChart({ data, date, title }: PriceChartProps) {
   const dateStr = format(date, 'd MMMM yyyy', { locale: nl });
   if (!data?.data?.data) {
     return (
-      <Card>
-        <Title>{title} - {dateStr}</Title>
+      <Card className="zonneplan-card">
+        <div className="w-full h-full">
+          <Title className="text-[#00aa65] font-medium text-center mb-4">{title} - {dateStr}</Title>
+          <div className="h-72 flex items-center justify-center text-gray-500">
+            Geen prijzen beschikbaar
+          </div>
+        </div>
       </Card>
     );
   }
@@ -54,22 +59,20 @@ export function PriceChart({ data, date, title }: PriceChartProps) {
   console.log('Final chart data:', chartData);
 
   return (
-    <Card>
-      <Title>{title} - {dateStr}</Title>
+    <Card className="zonneplan-card">
+      <Title className="text-[#00aa65] font-medium text-center mb-4">{title} - {dateStr}</Title>
       <LineChart
-        className="mt-6 h-72"
+        className="h-72"
         data={chartData}
         index="time"
         categories={['value']}
-        colors={['indigo']}
+        colors={['#00aa65']}
         valueFormatter={(value) => `€${value.toFixed(2)}`}
         yAxisWidth={60}
-        showAnimation={false}
+        showAnimation={true}
         showLegend={false}
-        style={{
-          stroke: '#4F46E5',
-          strokeWidth: 2
-        }}
+        curveType="natural"
+        customTooltip={customTooltip}
       />
     </Card>
   );

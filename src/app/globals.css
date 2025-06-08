@@ -1,3 +1,29 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Custom styles */
+.text-tremor-title {
+  color: #00aa65 !important;
+  text-align: center !important;
+  font-weight: bold;
+}
+
+.tremor-Card-root {
+  border-radius:1em !important;
+  border:1px solid #d7d7d7 !important; 
+  box-shadow: 5px 6px 21px 2px rgba(112,112,112,0.69) !important;
+  -webkit-box-shadow: 5px 6px 21px 2px rgba(112,112,112,0.69) !important;
+  -moz-box-shadow: 5px 6px 21px 2px rgba(112,112,112,0.69) !important;
+}
+
+
+@layer components {
+  .zonneplan-card {
+    @apply !p-4 !border-0 !shadow-xl !rounded-xl !bg-white;
+  }
+
+  .zonneplan-inner-card {
+    @apply !p-2 !rounded-lg !bg-white !shadow-md !border-0;
+  }
+}
