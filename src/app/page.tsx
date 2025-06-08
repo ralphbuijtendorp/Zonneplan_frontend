@@ -181,7 +181,7 @@ export default function Home() {
               />
             ) : (
               <div className="h-72 flex items-center justify-center text-gray-500">
-                No prices found for this date
+                Geen prijzen gevonden voor deze datum!
               </div>
             )}
           </Card>
