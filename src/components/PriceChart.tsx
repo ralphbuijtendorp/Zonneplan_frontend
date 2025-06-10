@@ -56,8 +56,6 @@ export function PriceChart({ data, date, title }: PriceChartProps) {
     return null;
   };
 
-  console.log('Final chart data:', chartData);
-
   return (
     <Card className="zonneplan-card">
       <Title className="text-[#00aa65] font-medium text-center mb-4">{title} - {dateStr}</Title>
